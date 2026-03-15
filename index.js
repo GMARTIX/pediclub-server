@@ -20,6 +20,7 @@ app.get('/api/users', async (req, res) => {
     }));
     res.json(mappedUsers);
   } catch (error) {
+    console.error('ERROR /api/users:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -34,6 +35,7 @@ app.post('/api/users', async (req, res) => {
     );
     res.json({ id: result.insertId, success: true });
   } catch (error) {
+    console.error('ERROR POST /api/users:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -41,12 +43,12 @@ app.post('/api/users', async (req, res) => {
 // --- AUTH ENDPOINTS ---
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
+  console.log('Login attempt:', username);
   try {
     const [users] = await db.execute('SELECT * FROM users WHERE username = ?', [username]);
     if (users.length === 0) return res.status(401).json({ error: 'Usuario no encontrado' });
 
     const user = users[0];
-    // In production we should use bcrypt.compare
     if (password !== user.password) return res.status(401).json({ error: 'Contraseña incorrecta' });
 
     res.json({
@@ -57,6 +59,7 @@ app.post('/api/login', async (req, res) => {
       assignedCourtIds: user.assigned_court_ids ? user.assigned_court_ids.split(',').map(Number) : []
     });
   } catch (error) {
+    console.error('ERROR /api/login:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -68,6 +71,7 @@ app.get('/api/courts', async (req, res) => {
     const [courts] = await db.execute('SELECT * FROM courts WHERE club_id = ?', [clubId || 1]);
     res.json(courts);
   } catch (error) {
+    console.error('ERROR /api/courts:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -124,6 +128,12 @@ app.get('/api/cash-movements', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+  try {
+    await db.execute('SELECT 1');
+    console.log('DATABASE_CONNECTION_SUCCESS');
+  } catch (err) {
+    console.error('DATABASE_CONNECTION_ERROR:', err.message);
+  }
 });
