@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 // --- USER MANAGEMENT ENDPOINTS ---
 app.get('/api/users', async (req, res) => {
   try {
-    const [users] = await db.execute('SELECT id, username, role, club_id as clubId, assigned_court_ids as assignedCourtIds FROM users');
+    const [users] = await db.execute('SELECT id, username, password, role, phone, club_id as clubId, assigned_court_ids as assignedCourtIds FROM users');
     // Map assigned_court_ids from string to array
     const mappedUsers = users.map(u => ({
       ...u,
@@ -26,12 +26,12 @@ app.get('/api/users', async (req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
-  const { username, password, role, clubId, assignedCourtIds } = req.body;
+  const { username, password, role, phone, clubId, assignedCourtIds } = req.body;
   try {
     const assignedCourtsStr = assignedCourtIds ? assignedCourtIds.join(',') : null;
     const [result] = await db.execute(
-      'INSERT INTO users (username, password, role, club_id, assigned_court_ids) VALUES (?, ?, ?, ?, ?)',
-      [username, password || '1234', role, clubId, assignedCourtsStr]
+      'INSERT INTO users (username, password, phone, role, club_id, assigned_court_ids) VALUES (?, ?, ?, ?, ?, ?)',
+      [username, password || '1234', phone, role, clubId, assignedCourtsStr]
     );
     res.json({ id: result.insertId, success: true });
   } catch (error) {
