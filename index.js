@@ -92,6 +92,35 @@ app.get('/api/courts', async (req, res) => {
   }
 });
 
+app.post('/api/courts', async (req, res) => {
+  const { name, type, clubId, price } = req.body;
+  try {
+    const [result] = await db.execute(
+      'INSERT INTO courts (name, type, club_id, price) VALUES (?, ?, ?, ?)',
+      [name, type, clubId || 1, price || 0]
+    );
+    res.json({ id: result.insertId, success: true });
+  } catch (error) {
+    console.error('ERROR POST /api/courts:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/courts/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, type, price } = req.body;
+  try {
+    await db.execute(
+      'UPDATE courts SET name = ?, type = ?, price = ? WHERE id = ?',
+      [name, type, price || 0, id]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('ERROR PUT /api/courts:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // --- BOOKING ENDPOINTS ---
 app.get('/api/bookings', async (req, res) => {
   const { courtId, date } = req.query;
