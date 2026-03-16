@@ -51,13 +51,19 @@ app.post('/api/users', async (req, res) => {
 // --- AUTH ENDPOINTS ---
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
-  console.log('Login attempt:', username);
+  const cleanUser = (username || '').trim();
+  const cleanPass = (password || '').trim();
+  
+  console.log('Login attempt:', cleanUser);
   try {
-    const [users] = await db.execute('SELECT * FROM users WHERE username = ? OR email = ?', [username, username]);
+    const [users] = await db.execute(
+      'SELECT * FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)', 
+      [cleanUser, cleanUser]
+    );
     if (users.length === 0) return res.status(401).json({ error: 'Credenciales inválidas' });
 
     const user = users[0];
-    if (password !== user.password) return res.status(401).json({ error: 'Contraseña incorrecta' });
+    if (cleanPass !== user.password) return res.status(401).json({ error: 'Contraseña incorrecta' });
 
     res.json({
       id: user.id,
