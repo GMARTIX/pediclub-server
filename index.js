@@ -101,38 +101,45 @@ app.get('/api/bookings', async (req, res) => {
 });
 
 app.post('/api/bookings', async (req, res) => {
-  console.log('RECV BOOKING:', req.body);
+  console.log('RECV BOOKING:', JSON.stringify(req.body, null, 2));
   const { courtId, date, startTime, endTime, userName, label, deposit, paymentMethod, phone, email } = req.body;
+  
   try {
     const [result] = await db.execute(
-      'INSERT INTO bookings (court_id, date, start_time, end_time, user_name, label, deposit, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [courtId, date, startTime, endTime, userName, label || 'NORMAL', deposit || 0, paymentMethod]
+      'INSERT INTO bookings (court_id, date, start_time, end_time, user_name, phone, email, label, deposit, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [courtId, date, startTime, endTime, userName, phone || null, email || null, label || 'NORMAL', deposit || 0, paymentMethod]
     );
     
     // Fetch court name for the webhook
     const [courtRes] = await db.execute('SELECT name, club_id FROM courts WHERE id = ?', [courtId]);
-    const courtName = courtRes[0]?.name || 'Cancha Desconocida';
+    const courtName = courtRes[0]?.name || 'Cancha ' + courtId;
     const clubId = courtRes[0]?.club_id;
 
     // --- Webhook Notification (Server-Side to bypass CORS) ---
+    // Await it to ensure it finishes or use .catch to not block the response if desired, 
+    // but here we want to be sure it's sent.
     try {
-      fetch('https://n8np.pediclub.com/webhook/turnitoclub', {
+      const webhookPayload = {
+        nombre: userName,
+        telefono: phone || 'Sin Telefono',
+        email: email || 'Sin Email',
+        cancha: courtName,
+        fecha: date,
+        hora: startTime,
+        precio: deposit || 60000,
+        source: 'turnitoclub_server'
+      };
+      
+      console.log('Sending to Webhook:', webhookPayload);
+
+      await fetch('https://n8np.pediclub.com/webhook/turnitoclub', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre: userName,
-          telefono: phone || 'Sin Telefono',
-          email: email || 'Sin Email',
-          cancha: courtName,
-          fecha: date,
-          hora: startTime,
-          precio: deposit || 60000,
-          source: 'turnitoclub_server'
-        })
+        body: JSON.stringify(webhookPayload)
       });
-      console.log('Webhook dispatched for:', userName);
+      console.log('Webhook SUCCESS for:', userName);
     } catch (whErr) {
-      console.error('Webhook failed:', whErr.message);
+      console.error('Webhook ERROR:', whErr.message);
     }
 
     // If there's a deposit, record it in cash movements
