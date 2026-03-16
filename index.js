@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 // --- USER MANAGEMENT ENDPOINTS ---
 app.get('/api/users', async (req, res) => {
   try {
-    const [users] = await db.execute('SELECT id, username, password, role, phone, club_id as clubId, assigned_court_ids as assignedCourtIds FROM users');
+    const [users] = await db.execute('SELECT id, username, password, role, phone, email, club_id as clubId, assigned_court_ids as assignedCourtIds FROM users');
     // Map assigned_court_ids from string to array
     const mappedUsers = users.map(u => ({
       ...u,
@@ -26,15 +26,16 @@ app.get('/api/users', async (req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
-  const { username, password, role, phone, clubId, assignedCourtIds } = req.body;
+  const { username, password, role, phone, email, clubId, assignedCourtIds } = req.body;
   try {
     const assignedCourtsStr = assignedCourtIds ? assignedCourtIds.join(',') : null;
     const [result] = await db.execute(
-      'INSERT INTO users (username, password, phone, role, club_id, assigned_court_ids) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO users (username, password, phone, email, role, club_id, assigned_court_ids) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [
         username, 
         password || '1234', 
         phone || null, 
+        email || null,
         role, 
         clubId || null, 
         assignedCourtsStr
@@ -63,6 +64,7 @@ app.post('/api/login', async (req, res) => {
       username: user.username,
       role: user.role,
       phone: user.phone,
+      email: user.email,
       clubId: user.club_id,
       assignedCourtIds: user.assigned_court_ids ? user.assigned_court_ids.split(',').map(Number) : []
     });
@@ -169,16 +171,17 @@ app.get('/api/cash-movements', async (req, res) => {
 
 app.put('/api/users/:id', async (req, res) => {
   const { id } = req.params;
-  const { username, password, role, phone, clubId, assignedCourtIds } = req.body;
+  const { username, password, role, phone, email, clubId, assignedCourtIds } = req.body;
   try {
     const assignedCourtsStr = Array.isArray(assignedCourtIds) ? assignedCourtIds.join(',') : null;
     await db.execute(
-      'UPDATE users SET username = ?, password = ?, role = ?, phone = ?, club_id = ?, assigned_court_ids = ? WHERE id = ?',
+      'UPDATE users SET username = ?, password = ?, role = ?, phone = ?, email = ?, club_id = ?, assigned_court_ids = ? WHERE id = ?',
       [
         username, 
         password || '1234', 
         role, 
         phone || null, 
+        email || null,
         clubId || null, 
         assignedCourtsStr, 
         id
