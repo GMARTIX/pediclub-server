@@ -11,8 +11,21 @@ const PORT = process.env.PORT || 3000;
 
 // --- USER MANAGEMENT ENDPOINTS ---
 app.get('/api/users', async (req, res) => {
+  const { clubId, role } = req.query;
   try {
-    const [users] = await db.execute('SELECT id, username, password, role, phone, email, club_id as clubId, assigned_court_ids as assignedCourtIds FROM users');
+    let query = 'SELECT id, username, password, role, phone, email, club_id as clubId, assigned_court_ids as assignedCourtIds FROM users WHERE 1=1';
+    const params = [];
+
+    if (clubId) {
+      query += ' AND club_id = ?';
+      params.push(clubId);
+    }
+    if (role) {
+      query += ' AND role = ?';
+      params.push(role);
+    }
+
+    const [users] = await db.execute(query, params);
     // Map assigned_court_ids from string to array
     const mappedUsers = users.map(u => ({
       ...u,
