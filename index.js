@@ -62,6 +62,7 @@ app.post('/api/login', async (req, res) => {
       id: user.id,
       username: user.username,
       role: user.role,
+      phone: user.phone,
       clubId: user.club_id,
       assignedCourtIds: user.assigned_court_ids ? user.assigned_court_ids.split(',').map(Number) : []
     });
@@ -100,6 +101,7 @@ app.get('/api/bookings', async (req, res) => {
 });
 
 app.post('/api/bookings', async (req, res) => {
+  console.log('RECV BOOKING:', req.body);
   const { courtId, date, startTime, endTime, userName, label, deposit, paymentMethod, phone, email } = req.body;
   try {
     const [result] = await db.execute(
