@@ -135,6 +135,31 @@ app.get('/api/cash-movements', async (req, res) => {
   }
 });
 
+app.put('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const { username, password, role, phone, clubId, assignedCourtIds } = req.body;
+  try {
+    const assignedCourtsStr = Array.isArray(assignedCourtIds) ? assignedCourtIds.join(',') : null;
+    await db.execute(
+      'UPDATE users SET username = ?, password = ?, role = ?, phone = ?, club_id = ?, assigned_court_ids = ? WHERE id = ?',
+      [
+        username, 
+        password || '1234', 
+        role, 
+        phone || null, 
+        clubId || null, 
+        assignedCourtsStr, 
+        id
+      ]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('ERROR PUT /api/users:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   try {
