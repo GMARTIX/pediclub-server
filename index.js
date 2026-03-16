@@ -100,18 +100,41 @@ app.get('/api/bookings', async (req, res) => {
 });
 
 app.post('/api/bookings', async (req, res) => {
-  const { courtId, date, startTime, endTime, userName, label, deposit, paymentMethod } = req.body;
+  const { courtId, date, startTime, endTime, userName, label, deposit, paymentMethod, phone, email } = req.body;
   try {
     const [result] = await db.execute(
       'INSERT INTO bookings (court_id, date, start_time, end_time, user_name, label, deposit, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [courtId, date, startTime, endTime, userName, label || 'NORMAL', deposit || 0, paymentMethod]
     );
     
+    // Fetch court name for the webhook
+    const [courtRes] = await db.execute('SELECT name, club_id FROM courts WHERE id = ?', [courtId]);
+    const courtName = courtRes[0]?.name || 'Cancha Desconocida';
+    const clubId = courtRes[0]?.club_id;
+
+    // --- Webhook Notification (Server-Side to bypass CORS) ---
+    try {
+      fetch('https://n8np.pediclub.com/webhook/turnitoclub', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: userName,
+          telefono: phone || 'Sin Telefono',
+          email: email || 'Sin Email',
+          cancha: courtName,
+          fecha: date,
+          hora: startTime,
+          precio: deposit || 60000,
+          source: 'turnitoclub_server'
+        })
+      });
+      console.log('Webhook dispatched for:', userName);
+    } catch (whErr) {
+      console.error('Webhook failed:', whErr.message);
+    }
+
     // If there's a deposit, record it in cash movements
     if (deposit > 0) {
-      const [clubRes] = await db.execute('SELECT club_id FROM courts WHERE id = ?', [courtId]);
-      const clubId = clubRes[0].club_id;
-      
       await db.execute(
         'INSERT INTO cash_movements (club_id, court_id, concept, player_name, income, payment_method) VALUES (?, ?, ?, ?, ?, ?)',
         [clubId, courtId, 'Cobro Seña', userName, deposit, paymentMethod]
