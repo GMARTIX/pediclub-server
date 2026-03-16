@@ -31,7 +31,14 @@ app.post('/api/users', async (req, res) => {
     const assignedCourtsStr = assignedCourtIds ? assignedCourtIds.join(',') : null;
     const [result] = await db.execute(
       'INSERT INTO users (username, password, phone, role, club_id, assigned_court_ids) VALUES (?, ?, ?, ?, ?, ?)',
-      [username, password || '1234', phone, role, clubId, assignedCourtsStr]
+      [
+        username, 
+        password || '1234', 
+        phone || null, 
+        role, 
+        clubId || null, 
+        assignedCourtsStr
+      ]
     );
     res.json({ id: result.insertId, success: true });
   } catch (error) {
