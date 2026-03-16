@@ -53,8 +53,8 @@ app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   console.log('Login attempt:', username);
   try {
-    const [users] = await db.execute('SELECT * FROM users WHERE username = ?', [username]);
-    if (users.length === 0) return res.status(401).json({ error: 'Usuario no encontrado' });
+    const [users] = await db.execute('SELECT * FROM users WHERE username = ? OR email = ?', [username, username]);
+    if (users.length === 0) return res.status(401).json({ error: 'Credenciales inválidas' });
 
     const user = users[0];
     if (password !== user.password) return res.status(401).json({ error: 'Contraseña incorrecta' });
