@@ -106,11 +106,11 @@ app.get('/api/courts', async (req, res) => {
 });
 
 app.post('/api/courts', async (req, res) => {
-  const { name, type, clubId, price, startHour, endHour, slotDuration } = req.body;
+  const { name, type, clubId, price, startHour, endHour, slotDuration, whatsapp, paymentAlias } = req.body;
   try {
     const [result] = await db.execute(
-      'INSERT INTO courts (name, type, club_id, price, start_hour, end_hour, slot_duration) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, type, clubId || 1, price || 0, startHour || '08:00', endHour || '23:00', slotDuration || 90]
+      'INSERT INTO courts (name, type, club_id, price, start_hour, end_hour, slot_duration, whatsapp, payment_alias) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, type, clubId || 1, price || 0, startHour || '08:00', endHour || '23:00', slotDuration || 90, whatsapp || null, paymentAlias || null]
     );
     res.json({ id: result.insertId, success: true });
   } catch (error) {
@@ -121,11 +121,11 @@ app.post('/api/courts', async (req, res) => {
 
 app.put('/api/courts/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, type, price, startHour, endHour, slotDuration } = req.body;
+  const { name, type, price, startHour, endHour, slotDuration, whatsapp, paymentAlias } = req.body;
   try {
     await db.execute(
-      'UPDATE courts SET name = ?, type = ?, price = ?, start_hour = ?, end_hour = ?, slot_duration = ? WHERE id = ?',
-      [name, type, price || 0, startHour || '08:00', endHour || '23:00', slotDuration || 90, id]
+      'UPDATE courts SET name = ?, type = ?, price = ?, start_hour = ?, end_hour = ?, slot_duration = ?, whatsapp = ?, payment_alias = ? WHERE id = ?',
+      [name, type, price || 0, startHour || '08:00', endHour || '23:00', slotDuration || 90, whatsapp || null, paymentAlias || null, id]
     );
     res.json({ success: true });
   } catch (error) {
