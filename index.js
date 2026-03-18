@@ -134,6 +134,55 @@ app.put('/api/courts/:id', async (req, res) => {
   }
 });
 
+// CLUBS
+app.get('/api/clubs', async (req, res) => {
+  try {
+    const [clubs] = await db.execute('SELECT * FROM clubs');
+    res.json(clubs);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/clubs', async (req, res) => {
+  const { name, address, hours, services, map_url } = req.body;
+  try {
+    const [result] = await db.execute(
+      'INSERT INTO clubs (name, address, hours, services, map_url) VALUES (?, ?, ?, ?, ?)',
+      [name, address, hours || null, services || null, map_url || null]
+    );
+    res.json({ id: result.insertId, success: true });
+  } catch (error) {
+    console.error('ERROR POST /api/clubs:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/clubs/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [club] = await db.execute('SELECT * FROM clubs WHERE id = ?', [id]);
+    res.json(club[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/clubs/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, address, hours, services, map_url } = req.body;
+  try {
+    await db.execute(
+      'UPDATE clubs SET name = ?, address = ?, hours = ?, services = ?, map_url = ? WHERE id = ?',
+      [name, address, hours || null, services || null, map_url || null, id]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('ERROR PUT /api/clubs:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // --- BOOKING ENDPOINTS ---
 app.get('/api/bookings', async (req, res) => {
   const { courtId, date } = req.query;
